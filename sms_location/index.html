@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Geolocation Marker Example Usage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+        html,
+        body,
+        #map_canvas {
+            padding: 0;
+            height: 100%;
+        }
+        
+        input[type="text"] {
+            top: 10%;
+            position: absolute;
+            width: 85%;
+            padding: 12px 20px;
+            margin: 5%;
+            box-sizing: border-box;
+        }
+        
+        #btnUpdateAddress {
+            bottom: 0;
+            position: absolute;
+            width: 55%;
+            margin: 5%;
+            margin-left: 20%;
+            background-color: #4CAF50;
+            /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDX6lA3HQgZpIkxL3oVh6Btx7uAkyvPnh4"></script>
+    <script src="geolocation-marker.js"></script>
+    <script src="https://code.jquery.com/jquery-1.8.3.min.js" integrity="sha256-YcbK69I5IXQftf/mYD8WY0/KmEDCv1asggHpJk1trM8=" crossorigin="anonymous"></script>
+    <script>
+        var map, marker;
+        var geocoder = new google.maps.Geocoder();
+
+        function initialize() {
+            var mapOptions = {
+                zoom: 17,
+                center: new google.maps.LatLng(-34.397, 150.644),
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById('map_canvas'),
+                mapOptions);
+
+
+            if (!!navigator.geolocation) {
+
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var geolocate = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                    getAddress(geolocate);
+                    marker = new google.maps.Marker({
+                        map: map,
+                        draggable: true,
+                        position: geolocate
+                    });
+
+                    map.setCenter(geolocate);
+
+                    google.maps.event.addListener(marker, 'dragend', function(marker) {
+                        var latLng = marker.latLng;
+                        getAddress(latLng);
+                    });
+                });
+
+            } else {
+                $("#txtaddress").val("Your browser does not support geolocation");
+            }
+
+
+
+        }
+
+
+
+        function getAddress(latlng) {
+
+            geocoder.geocode({
+                'latLng': latlng
+            }, function(results, status) {
+                if (status !== google.maps.GeocoderStatus.OK) {
+                    alert(status);
+                }
+                // This is checking to see if the Geoeode Status is OK before proceeding
+                if (status == google.maps.GeocoderStatus.OK) {
+                    console.log(results);
+                    var address = (results[0].formatted_address);
+                    $("#txtaddress").val(address);
+                }
+            });
+        }
+
+        google.maps.event.addDomListener(window, 'load', initialize);
+
+
+        function updateAddress() {
+            var id = getParameterByName('oid');
+
+            $.ajax({
+                url: "",
+                data: {
+                    id: id,
+                    address: $("#txtaddress").val()
+                },
+                type: "POST",
+                success: function(msg) {},
+                error: function(x, y) {}
+            });
+        }
+
+        function getParameterByName(name, url) {
+            if (!url) url = window.location.href;
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
+        }
+    </script>
+</head>
+
+<body>
+    <div id="map_canvas"></div>
+    <div>
+        <input type="text" name="txtaddress" id="txtaddress" />
+        <button type="button" id="btnUpdateAddress" onclick="updateAddress()"> Update Address </button>
+    </div>
+</body>
+
+</html>
